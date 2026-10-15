@@ -28,6 +28,42 @@ function compact(n: number): string {
   return String(n);
 }
 
+/**
+ * ## ## ## Por que o `type` cru não serve
+ *
+ * O painel mostrava literalmente `disabled` na linha "Atualização", e o
+ * usuário leu como "o autoupdate está quebrado". Não estava: o `Updater`
+ * respondia `disabled` com `reason: 'atualizado'` **depois** de consultar o
+ * GitHub e encontrar a mesma versão — ou seja, era sucesso.
+ *
+ * O mesmo `disabled` também aparece quando o motor nem carregou. Um rótulo
+ * só para os dois casos obrigaria o usuário a abrir o log para saber qual.
+ *
+ * A distinção que importa é `reason`: ela separa "não há o que atualizar" de
+ * "não consegui verificar".
+ */
+function rotuloUpdate(u: AppStatus['update'] | undefined): string {
+  if (!u) return '—';
+  switch (u.type) {
+    case 'checking':
+      return 'verificando…';
+    case 'available':
+      return `nova versão ${u.version ?? ''}`.trim();
+    case 'downloading':
+      return `baixando ${Math.round(u.percent ?? 0)}%`;
+    case 'downloaded':
+      return `pronto para instalar (${u.version ?? '?'})`;
+    case 'error':
+      return `falhou: ${u.message ?? 'sem detalhe'}`;
+    case 'disabled':
+      // O `reason` é o que separa "você já está na última" de "não
+      // consegui checar" — sem ele, os dois viravam a mesma palavra.
+      return u.reason === 'atualizado' ? 'você está na última versão' : (u.reason ?? 'desligado');
+    default:
+      return String((u as { type: string }).type);
+  }
+}
+
 function captureState(status: AppStatus | null): {
   label: string;
   tone: 'ok' | 'warn' | 'danger';
@@ -284,7 +320,7 @@ export function Dashboard() {
           <Row k="Node" v={status?.node ?? '—'} mono />
           <Row k="Plataforma" v={status?.platform ?? '—'} mono />
           <Row k="Fonte dos pixels" v={status?.capture.source ?? 'janela'} />
-          <Row k="Atualização" v={status?.update?.type ?? '—'} />
+          <Row k="Atualização" v={rotuloUpdate(status?.update)} />
         </div>
       </div>
 

@@ -30,10 +30,29 @@ export class TrayIcon {
   }
 
   /**
-   * Cria a bandeja, ou nao, conforme a configuracao.
+   * Cria a bandeja.
+   *
+   * ## ## ## Por que deixou de depender da configuração
+   *
+   * Antes era `if (!minimizeToTray) return`. Com o padrão `false`, a bandeja
+   * **nunca existia** — e o usuário reclamava que o app "não fica na bandeja",
+   * sem ter como descobrir que o culpado era um checkbox desligado em
+   * Ajustes, numa tela que ele só acharia depois de fechar o app sem querer.
+   *
+   * ## ## ## Separação de responsabilidades
+   *
+   * Agora a bandeja é sempre criada e é a **âncora de saída**: existe um lugar
+   * previsível para voltar ao app e um item "Sair" no menu, independente da
+   * configuração. `minimizeToTray` decide apenas o que o **X** faz:
+   *
+   *   true  — X esconde, o app continua com a captura ligada enquanto joga
+   *   false — X encerra, e a bandeja some junto com o processo
+   *
+   * Criar sempre é a única versão em que o item de menu "Sair" é confiável:
+   * com a bandeja condicional, fechar a janela matava o app e o menu sumia.
    *
    * Deve rodar depois de `app.whenReady()`: no macOS a bandeja antes disso
-   * fica invisivel e precisa ser recriada depois.
+   * fica invisível e precisa ser recriada depois.
    */
   create(): void {
     if (!app.isReady()) {
@@ -41,13 +60,14 @@ export class TrayIcon {
       return;
     }
     if (this.tray) return;
-    if (!this.gx.store.config.minimizeToTray) return;
 
     const icone = this.icone();
     this.tray = new Tray(icone);
     this.tray.setToolTip('Arc GX');
     this.tray.setContextMenu(this.menu());
     this.tray.on('click', () => this.gx.panel.toggle());
+
+    log.info('bandeja criada');
   }
 
   private icone(): Electron.NativeImage {

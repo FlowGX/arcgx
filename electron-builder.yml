@@ -80,6 +80,19 @@ win:
   extraResources:
     - from: assets/icon.ico
       to: assets/icon.ico
+    # ## ## ## O data-release viaja dentro do instalador
+    #
+    # Sem isto, `localReleaseBase()` volta vazio no app empacotado, o
+    # `joinUrl` monta `./current.json` e o painel mostra
+    # `Failed to parse URL from /current.json`.
+    #
+    # Pior: com o cache já em %APPDATA% o app funciona, então o bug só aparece
+    # na primeira execução de uma instalação nova.
+    #
+    # Fora do asar de propósito: `DataRelease` lê por `readFile` e precisa de
+    # caminho de arquivo de verdade, como os `.node` e o traineddata.
+    - from: build/data-release
+      to: data-release
 nsis:
   oneClick: false
   perMachine: false

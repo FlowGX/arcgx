@@ -39,7 +39,7 @@ export const DEFAULT_CONFIG: AppConfig = {
    * tem de vir de fora dele.
    */
   identifyHotkey: 'Alt+Shift+Q',
-  minimizeToTray: false,
+  minimizeToTray: true,
   updateFeedUrl: '',
   windowBounds: null,
 };

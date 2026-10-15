@@ -1,7 +1,7 @@
 {
   "name": "arc-gx",
   "productName": "Arc GX",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Arc GX - desktop overlay + companion panel (Electron + Rust N-API + ONNX)",
   "license": "UNLICENSED",
@@ -20,7 +20,7 @@
     "backend"
   ],
   "scripts": {
-    "preparar-recursos": "node tools/preparar-recursos.mjs",
+    "preparar-recursos": "node tools/preparar-recursos.mjs && node tools/empacotar-data-release.mjs",
     "prebuild": "npm run preparar-recursos",
     "build:shared": "tsc -p packages/shared/tsconfig.json",
     "build:native:wgc": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-native.ps1",

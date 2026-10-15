@@ -75,16 +75,34 @@ const DEFAULT_BACKEND = 'https://arcgx-data.arcgx.workers.dev';
 function localReleaseBase(): string {
   const { join, dirname } = path;
   const candidates = [
+    // ## ## ## Empacotado: `resources/data-release`
+    //
+    // Vem do `extraResources` do electron-builder. É o caminho que resolve o
+    // `Failed to parse URL from ./current.json` — no pacote, os dois candidatos
+    // abaixo não existem, a base voltava vazia e o app só não quebrava porque
+    // o cache em %APPDATA% escondia o erro.
+    process.resourcesPath ? join(process.resourcesPath, 'data-release') : null,
     // `dist/index.js` -> a raiz do pacote main
     join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'build', 'release'),
     join(process.cwd(), 'build', 'release'),
-  ];
+  ].filter((p): p is string => Boolean(p));
+
   for (const dir of candidates) {
     // o ponteiro de "qual release está ativa" é `current.json`, na raiz. O
     // manifest de cada uma mora em `releases/<id>/`, então procurar
     // `manifest.json` aqui dava falso negativo sempre.
     if (existsSync(join(dir, 'current.json'))) return pathToFileURL(dir).href;
   }
+
+  // ## ## ## Sem base nenhuma: erro que diz o que fazer
+  //
+  // Antes devolvia `''`, e o erro chegava na UI como
+  // `Failed to parse URL from ./current.json` — que fala de URL e não de
+  // arquivo faltando no instalador.
+  log.error(
+    'nenhum data-release encontrado. Procurado em:\n  ' + candidates.join('\n  ') +
+    '\nGere com: npm run data:publish -- --src dados --out build/release',
+  );
   return '';
 }
 
