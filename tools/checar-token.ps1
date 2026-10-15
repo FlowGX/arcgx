@@ -64,12 +64,20 @@ catch {
 
 # 3) o token tem escrita? Teste de verdade: cria e apaga um asset na release mais recente.
 #
-# ## ## ## curl.exe, e nao Invoke-RestMethod
+# ## ## ## Por que `curl.exe` e nao `Invoke-RestMethod`
 #
-# O PS 5.1 manda `[byte[]]` com `Transfer-Encoding: chunked`, e o upload do
-# GitHub responde 404 nesse caso. O token pode estar perfeito e o teste
-# reprovar do mesmo jeito — foi exatamente o que aconteceu: `permissions.admin`
-# era True e o probe dava 404.
+# PS 5.1 manda `[byte[]]` com `Transfer-Encoding: chunked`; o GitHub lida mal
+# com isso em upload.
+#
+# ## ## ## E, principalmente, por que `uploads.github.com`
+#
+# `api.github.com` **nao** aceita POST de asset. A URL de upload fica no campo
+# `upload_url` do proprio release, no host `uploads.github.com`, ainda no
+# formato de template `{?name,label}`.
+#
+# Errar o host da 404 com token valido (`permissions.admin = True`) e release
+# valida — e isso engana o diagnostico inteiro, porque 404 em escrita parece
+# falta de permissao.
 $releases = @(Invoke-RestMethod "https://api.github.com/repos/$Repo/releases" -Headers $headers)
 if ($releases.Count -eq 0) {
   Write-Host "  [--] nenhuma release ainda; nada para testar" -ForegroundColor Yellow
@@ -91,6 +99,18 @@ $nome = "perm-probe-$([guid]::NewGuid().ToString('N').Substring(0,8)).txt"
 $assetId = $null
 $status = $null
 
+# ## ## ## Expandindo a URI template
+#
+# `upload_url` vem como `.../assets{?name,label}`. O bloco entre chaves e a
+# parte que se expande com os parametros e **precisa sair inteiro**, inclusive
+# as chaves. Um replace que so tirasse as chaves deixaria `?name=...` orfa no
+# fim da URL.
+$urlProbe = $alvo.upload_url -replace '\{[^}]*\}', "?name=$nome"
+
+if (-not $urlProbe.StartsWith('https://uploads.github.com/')) {
+  throw "upload_url inesperado: $urlProbe"
+}
+
 try {
   $status = (& curl.exe -sS -w '%{http_code}' -o "$tmp.resposta.json" `
       -X POST `
@@ -99,7 +119,7 @@ try {
       -H "X-GitHub-Api-Version: 2022-11-28" `
       -H "Content-Type: application/octet-stream" `
       --data-binary "@$tmp" `
-      "https://api.github.com/repos/$Repo/releases/$($alvo.id)/assets?name=$nome" 2>&1 | Select-Object -Last 1)
+      "$urlProbe" 2>&1 | Select-Object -Last 1)
 
   if ($status -eq '201') {
     # O corpo da resposta tem o id do asset, para poder apagar o probe.
@@ -107,7 +127,7 @@ try {
     Write-Host "  [ok] TEM permissao de escrita" -ForegroundColor Green
   }
   else {
-    Write-Host "  [XX] upload recusado (HTTP $status)" -ForegroundColor Red
+    Write-Host "  [XX] upload recusado (HTTP $status) em $urlProbe" -ForegroundColor Red
     if (Test-Path "$tmp.resposta.json") {
       Write-Host "  corpo: $((Get-Content "$tmp.resposta.json" -Raw).Trim())" -ForegroundColor DarkGray
     }

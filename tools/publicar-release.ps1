@@ -308,13 +308,29 @@ foreach ($arquivo in @(
   $tam = if ($arquivo.Length -lt 1MB) { '{0:N0} KB' -f ($arquivo.Length / 1KB) } else { '{0:N1} MB' -f ($arquivo.Length / 1MB) }
   Write-Host "  subindo $($arquivo.Name) ($tam)..."
 
+  # ## ## ## `upload_url`, e nao `api.github.com`
+  #
+  # O GitHub documenta que o upload de asset **nao** vai para `api.github.com`.
+  # A URL de upload vem no proprio release, em `upload_url`, no host
+  # `uploads.github.com`, e ainda no formato de template:
+  #
+  #   https://uploads.github.com/repos/O/R/releases/ID/assets{?name,label}
+  #
+  # Postar em api.github.com responde 404 "Not Found" com token perfeito,
+  # `permissions.admin = True` e release valida — foi exatamente o que
+  # aconteceu, e custou duas hypotheses erradas antes.
+  #
+  # `{?name,label}` e uma URI template do RFC 6570: o bloco entre chaves e a
+  # parte que se expande com os parametros. Tem que sair inteira, inclusive as
+  # chaves.
+  #
   # ## ## ## Por que o array de argumentos
   #
   # Invocar curl com string interpolada quebra em nome de arquivo com espaco
-  # ou aspas — e o nome do instalador tem espaco ("Arc GX-0.1.0-setup.exe").
-  # O array passa cada item como um argumento separado, sem reinterpretacao.
+  # — e o instalador tem espaco ("Arc GX-0.1.0-setup.exe"). O array passa cada
+  # item como argumento separado, sem reinterpretacao.
   $nomeAsset = [uri]::EscapeDataString($arquivo.Name)
-  $url = "https://api.github.com/repos/$Repo/releases/$($release.id)/assets?name=$nomeAsset"
+  $url = $release.upload_url -replace '\{[^}]*\}', "?name=$nomeAsset"
 
   $saidaCurl = & curl.exe -sS -w '%{http_code}' -o NUL `
     -X POST `
@@ -340,6 +356,17 @@ O nome do arquivo ja existe nesta release. GitHub nao deixa renomear nem
 substituir asset: apague o antigo em
   https://github.com/$Repo/releases/edit/$tag
 e rode de novo.
+"@
+  }
+
+  if ($status -eq '404') {
+    throw @"
+HTTP 404 ao subir $($arquivo.Name).
+
+A URL de upload foi $url
+
+Confere se ela comeca com https://uploads.github.com — api.github.com nao
+aceita POST de asset e devolve 404 sem corpo util.
 "@
   }
 
