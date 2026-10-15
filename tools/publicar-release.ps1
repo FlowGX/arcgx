@@ -292,8 +292,36 @@ foreach ($arquivo in @(
   $sw = [Diagnostics.Stopwatch]::StartNew()
   Write-Host "  subindo $($arquivo.Name) ($tam)..."
 
-  Invoke-RestMethod -Uri $destino -Headers $headers -Method Post `
-    -ContentType 'application/octet-stream' -Body $bytes | Out-Null
+  try {
+    Invoke-RestMethod -Uri $destino -Headers $headers -Method Post `
+      -ContentType 'application/octet-stream' -Body $bytes | Out-Null
+  }
+  catch {
+    $status = 0
+    try { $status = [int]$_.Exception.Response.StatusCode } catch { $status = 0 }
+
+    # ## ## ## 404 no POST com token "valido" = token sem escrita
+    #
+    # GitHub devolve 401 para token invalido e 404 para token que autentica mas
+    # nao tem permissao no repositorio. Como leitura de repo publico nao exige
+    # permissao nenhuma, o `GET` da release passa e o `POST` do asset falha —
+    # o unico sintoma visivel e um 404 sem nenhuma pista de token.
+    if ($status -eq 404 -or $status -eq 403) {
+      throw @"
+Upload recusado (HTTP $status). O token le o repositorio, mas nao escreve nele.
+
+Confere em https://github.com/settings/personal-access-tokens:
+
+  Repository access: deve estar em "Only select repositories" com $Repo marcado
+  Repository permissions > Contents: Read and write
+
+Alem disso: token expirado e repositorio recem-criado sao os outros dois
+motivos, e nenhum deles aparece como mensagem de permissao.
+"@
+    }
+
+    throw "Falha ao subir $($arquivo.Name) (HTTP $status)."
+  }
 
   $sw.Stop()
   Write-Host "    ok em $([math]::Round($sw.Elapsed.TotalSeconds,1))s" -ForegroundColor Green
