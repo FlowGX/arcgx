@@ -272,8 +272,31 @@ como mensagem de permissao clara.
 
 # ------------------------------------------------------------------ upload
 
+# ## ## ## Por que `curl.exe` e nao `Invoke-RestMethod`
+#
+# O PS 5.1 manda `[byte[]]` com `Transfer-Encoding: chunked` em vez de
+# `Content-Length`, e o endpoint de upload de asset do GitHub responde 404
+# nesse caso — sem corpo de erro, sem mencao a encoding. O token estava
+# perfeito (`permissions.admin = True`); era o cliente HTTP.
+#
+# `curl.exe` vem no Windows 10 1803+ e monta a requisicao corretamente. Se
+# faltar, o erro passa a ser explicito em vez de um 404 sem pista.
+function Assert-Curl {
+  if (-not (Get-Command curl.exe -ErrorAction SilentlyContinue)) {
+    throw @'
+curl.exe nao encontrado.
+
+Este Windows e anterior a 10 1803, ou o curl foi removido. Instale o curl ou
+suba os arquivos pela interface do GitHub:
+
+  https://github.com/FlowGX/arcgx/releases/edit/<tag>
+'@
+  }
+}
+
+Assert-Curl
+
 Write-Host "`nSubindo artefatos..." -ForegroundColor Cyan
-$upload = "$api/$($release.id)/assets?name={0}"
 
 foreach ($arquivo in @(
     Get-ChildItem -Path (Join-Path $saida 'latest.yml') -ErrorAction SilentlyContinue
@@ -281,50 +304,51 @@ foreach ($arquivo in @(
     Get-ChildItem -Path (Join-Path $saida "*-$Version-setup.exe") -ErrorAction SilentlyContinue
   )) {
   if (-not $arquivo) { continue }
-  $destino = $upload -f [uri]::EscapeDataString($arquivo.Name)
-  $bytes = [System.IO.File]::ReadAllBytes($arquivo.FullName)
 
   $tam = if ($arquivo.Length -lt 1MB) { '{0:N0} KB' -f ($arquivo.Length / 1KB) } else { '{0:N1} MB' -f ($arquivo.Length / 1MB) }
-
-  # `Invoke-RestMethod` nao mostra progresso, e 108 MB sem nenhuma saida
-  # parece travado. `-Debug` no 5.1 imprime bytes enviados, mas polui demais,
-  # entao mostramos o que importa: que comecou e que terminou.
-  $sw = [Diagnostics.Stopwatch]::StartNew()
   Write-Host "  subindo $($arquivo.Name) ($tam)..."
 
-  try {
-    Invoke-RestMethod -Uri $destino -Headers $headers -Method Post `
-      -ContentType 'application/octet-stream' -Body $bytes | Out-Null
+  # ## ## ## Por que o array de argumentos
+  #
+  # Invocar curl com string interpolada quebra em nome de arquivo com espaco
+  # ou aspas — e o nome do instalador tem espaco ("Arc GX-0.1.0-setup.exe").
+  # O array passa cada item como um argumento separado, sem reinterpretacao.
+  $nomeAsset = [uri]::EscapeDataString($arquivo.Name)
+  $url = "https://api.github.com/repos/$Repo/releases/$($release.id)/assets?name=$nomeAsset"
+
+  $saidaCurl = & curl.exe -sS -w '%{http_code}' -o NUL `
+    -X POST `
+    -H "Authorization: Bearer $token" `
+    -H "Accept: application/vnd.github+json" `
+    -H "X-GitHub-Api-Version: 2022-11-28" `
+    -H "Content-Type: application/octet-stream" `
+    --data-binary "@$($arquivo.FullName)" `
+    $url 2>&1
+
+  $status = ($saidaCurl | Select-Object -Last 1)
+
+  if ($status -eq '201') {
+    Write-Host '    ok' -ForegroundColor Green
+    continue
   }
-  catch {
-    $status = 0
-    try { $status = [int]$_.Exception.Response.StatusCode } catch { $status = 0 }
 
-    # ## ## ## 404 no POST com token "valido" = token sem escrita
-    #
-    # GitHub devolve 401 para token invalido e 404 para token que autentica mas
-    # nao tem permissao no repositorio. Como leitura de repo publico nao exige
-    # permissao nenhuma, o `GET` da release passa e o `POST` do asset falha —
-    # o unico sintoma visivel e um 404 sem nenhuma pista de token.
-    if ($status -eq 404 -or $status -eq 403) {
-      throw @"
-Upload recusado (HTTP $status). O token le o repositorio, mas nao escreve nele.
+  if ($status -eq '422') {
+    throw @"
+O GitHub recusou o asset $($arquivo.Name) com 422.
 
-Confere em https://github.com/settings/personal-access-tokens:
-
-  Repository access: deve estar em "Only select repositories" com $Repo marcado
-  Repository permissions > Contents: Read and write
-
-Alem disso: token expirado e repositorio recem-criado sao os outros dois
-motivos, e nenhum deles aparece como mensagem de permissao.
+O nome do arquivo ja existe nesta release. GitHub nao deixa renomear nem
+substituir asset: apague o antigo em
+  https://github.com/$Repo/releases/edit/$tag
+e rode de novo.
 "@
-    }
-
-    throw "Falha ao subir $($arquivo.Name) (HTTP $status)."
   }
 
-  $sw.Stop()
-  Write-Host "    ok em $([math]::Round($sw.Elapsed.TotalSeconds,1))s" -ForegroundColor Green
+  throw @"
+Falha ao subir $($arquivo.Name): HTTP $status
+
+Para ver o corpo do erro:
+  curl.exe -X POST -H "Authorization: Bearer `$env:GITHUB_TOKEN" --data-binary "@$($arquivo.FullName)" $url
+"@
 }
 
 Write-Host "`nPublicado: https://github.com/$Repo/releases/tag/$tag" -ForegroundColor Green
