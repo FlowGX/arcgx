@@ -1,0 +1,38 @@
+[package]
+name = "arcgx-ocr"
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+description = "OCR via Windows.Media.Ocr (N-API) — sem download de modelo"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3", default-features = false, features = ["napi8", "async"] }
+napi-derive = { version = "3", default-features = false, features = ["type-def"] }
+
+# 0.62 e nao 0.61 como nos outros addons: `windows-future` (necessario para o
+# `IAsyncOperation` de `RecognizeAsync`) so existe nessa linha e puxa
+# `windows-core` 0.62. Os outros addons podem ficar em 0.61 — sao cdylibs
+# separados e nao compartilham codigo Rust.
+windows = { version = "0.62", features = [
+  "Foundation",
+  "Graphics",
+  "Graphics_Imaging",
+  "Media_Ocr",
+  "Storage_Streams",
+  "Win32_Foundation",
+  "Win32_System_WinRT",
+] }
+windows-future = "0.3"
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+strip = "symbols"

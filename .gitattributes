@@ -1,0 +1,44 @@
+# ## ## ## Por que este arquivo existe
+#
+# O `.editorconfig` do projeto pede `end_of_line = lf` em tudo, mas o
+# `core.autocrlf = true` da maquina devolvia CRLF no checkout. Os dois se
+# contradiziam: o editor escrevia LF, o git convertia para CRLF, e o proximo
+# `git add` marcava o arquivo inteiro como modificado sem ninguem ter tocado
+# nele — diff phantom em todo arquivo de texto.
+#
+# LF no repositorio, LF no disco, e as exceptions abaixo onde CRLF e
+# obrigatorio ou onde binario nao pode ser tocado.
+
+* text=auto eol=lf
+
+# ## ## ## Binarios: nunca tocar
+#
+# Git tenta "normalizar" o que parece texto. Um encoder ONNX ou um traineddata
+# que passa por conversao de linha fica corrompido — e o sintoma aparece la
+# depois, como "o classificador errou 60% dos itens", nao como erro de build.
+*.onnx      binary
+*.bin       binary
+*.data      binary
+*.node      binary
+*.dll       binary
+*.exe       binary
+*.ico       binary
+*.png       binary
+*.jpg       binary
+*.gz        binary
+*.wasm      binary
+*.sqlite    binary
+*.traineddata binary
+
+# ## ## ## Onde CRLF e o esperado
+#
+# PowerShell e .cmd leem LF, mas o Notepad antigo e varios editores de texto
+# do Windows mostram o arquivo como uma linha so. Manter CRLF aqui evita o
+# "arquivo无敌 de uma linha".
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+
+# ## ## ## Sempre binario
+*.png       -text
+*.ico       -text

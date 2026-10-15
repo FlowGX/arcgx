@@ -1,0 +1,21 @@
+{
+  "name": "@arcgx/renderer-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@arcgx/shared": "*",
+    "leaflet": "1.9.4",
+    "preact": "^10.25.4"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.1",
+    "@types/leaflet": "^1.9.22",
+    "vite": "^6.0.7"
+  }
+}

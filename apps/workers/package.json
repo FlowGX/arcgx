@@ -1,0 +1,21 @@
+{
+  "name": "@arcgx/workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./pool": "./dist/pool.js",
+    "./protocol": "./dist/protocol.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@arcgx/shared": "*",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "onnxruntime-node": "1.30.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

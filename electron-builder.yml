@@ -1,0 +1,85 @@
+appId: io.arcgx.app
+productName: Arc GX
+copyright: Copyright © 2026 Arc GX
+directories:
+  output: release
+  buildResources: assets
+files:
+  - apps/main/dist/**/*
+  - apps/main/preload.cjs
+  - apps/main/resources/**/*
+  - apps/renderer/desktop/dist/**/*
+  - apps/renderer/overlay/dist/**/*
+  - packages/shared/dist/**/*
+  - packages/design/*.css
+  - package.json
+  - "!**/*.map"
+  - "!**/{.eslintrc.cjs,.editorconfig,.prettierrc}"
+  - "!**/{tsconfig.json,tsconfig.*.json}"
+asar: true
+asarUnpack:
+  - "**/node_modules/@arcgx/*/**"
+  # O onnxruntime-node abre o .onnx por caminho de arquivo. Dentro do asar
+  # ele recebe um caminho que nao existe no disco e a carga falha sem erro
+  # util — o worker cai no dHash e o app "funciona" com 38% de acerto.
+  # O mesmo vale para o wasm do Tesseract e para o traineddata: ambos sao
+  # abertos por caminho, nao pelo sistema de arquivos virtual do Electron.
+  - "**/_galeria/**"
+  - "**/ocr/**"
+  - "**/*.onnx"
+  - "**/*.wasm"
+  - "**/*.node"
+  - "**/*.dll"
+npmRebuild: false
+buildDependenciesFromSource: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-${version}-setup.${ext}
+  icon: assets/icon.ico
+  requestedExecutionLevel: asInvoker
+  # Sem `releaseInfo` custom: o `${version}` dentro de `releaseName` nao e
+  # expandido e ia literally para o `latest.yml` como texto.
+  # `defaultArch` substitui o antigo `targetArchitectures`, que nao existe no
+  # esquema do electron-builder 25.x e abortava o build.
+  defaultArch: x64
+  # ## ## ## Overridado pelo `publicar-release.ps1` quando nao ha Developer Mode
+  #
+  # O `winCodeSign` (que traz o `rcedit`) e extraido com symlink, e o Windows
+  # recusa sem Developer Mode ou admin. Com `signAndEditExecutable: false` o
+  # rcedit e pulado e o instalador sai sem o icone e a versao embutidos no
+  # `.exe` — o icone do instalador e o atalho continuam normais.
+  signAndEditExecutable: true
+  releaseInfo:
+    releaseName: Arc GX ${version}
+  # A bandeja precisa do icone em `process.resourcesPath`. Sem `extraResources`
+  # o `nativeImage.createFromPath` volta vazio e o Windows mostra um icone
+  # orfao sem imagem, ou nenhum.
+  extraResources:
+    - from: assets/icon.ico
+      to: assets/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Arc GX
+  deleteAppDataOnUninstall: false
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+publish:
+  # ## ## ## GitHub Releases, com o owner definido na hora de publicar
+  #
+  # O `electron-builder` resolve `${env.UPDATE_REPO}` no build. Publicar é
+  # sempre por script (`tools/publicar-release.ps1`), que define a variável a
+  # partir do remote do git — assim o owner fica em um lugar só e não fica
+  # escrito duas vezes no repositório.
+  #
+  # O app em si não depende deste valor: `updateFeedUrl` na config e o
+  # `ARC_UPDATE_FEED_URL` por variável de ambiente têm precedência, e vazios
+  # caem no `app-update.yml` embutido neste pacote.
+  provider: generic
+  url: https://github.com/${env.UPDATE_REPO}/releases/latest/download

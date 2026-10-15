@@ -1,0 +1,12 @@
+{
+  "itens": 1106,
+  "dim": 256,
+  "lado": 224,
+  "normalizado": "l2",
+  "espaco": "model-8e8863fa46c4",
+  "sha256": "8e8863fa46c4bc813609f9863ec3b46034ec8ba4ebc85a1ddf27981a1c5f87bc",
+  "sha256_onnx": "24871dcbc896659f8d80f5eea430ccff4ab1c433757770d47d99eb8d7f6edf33",
+  "origem": "ml/treinar-arte.py",
+  "encoder": "encoder-arte.pt",
+  "rotulos": 0
+}

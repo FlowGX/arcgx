@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["ES2023"],
+    "moduleResolution": "Bundler",
+    "strict": true
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,58 @@
+{
+  "name": "arc-gx",
+  "productName": "Arc GX",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Arc GX - desktop overlay + companion panel (Electron + Rust N-API + ONNX)",
+  "license": "UNLICENSED",
+  "author": "Arc GX",
+  "type": "module",
+  "main": "apps/main/dist/index.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/native/*",
+    "apps/main",
+    "apps/workers",
+    "apps/renderer/*",
+    "backend"
+  ],
+  "scripts": {
+    "preparar-recursos": "node tools/preparar-recursos.mjs",
+    "prebuild": "npm run preparar-recursos",
+    "build:shared": "tsc -p packages/shared/tsconfig.json",
+    "build:native:wgc": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-native.ps1",
+    "build:native:cell-vision": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-native.ps1 -Vision",
+    "build:renderer": "npm run build -w @arcgx/renderer-desktop && npm run build -w @arcgx/renderer-overlay",
+    "build:main": "tsc -p apps/main/tsconfig.json",
+    "build:workers": "tsc -p apps/workers/tsconfig.json",
+    "build": "npm run build:shared && npm run build:workers && npm run build:renderer && npm run build:main",
+    "dev:renderer": "concurrently -n desktop,overlay -c cyan,magenta \"npm run dev -w @arcgx/renderer-desktop\" \"npm run dev -w @arcgx/renderer-overlay\"",
+    "dev": "npm run build:shared && npm run dev:renderer && electron apps/main/dist/index.js",
+    "start": "npm run build && electron apps/main/dist/index.js",
+    "dist": "npm run build && electron-builder --win nsis --publish never",
+    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit && tsc -p apps/main/tsconfig.json --noEmit && tsc -p apps/workers/tsconfig.json --noEmit && tsc -p apps/renderer/desktop/tsconfig.json && tsc -p apps/renderer/overlay/tsconfig.json",
+    "data:ingest": "node tools/data-ingest/ingest.mjs",
+    "data:publish": "node tools/data-publisher/publish.mjs",
+    "data:dry-run": "node tools/data-publisher/publish.mjs --dry-run",
+    "data:all": "npm run data:ingest -- --out dados && npm run data:publish -- --src dados --out build/release",
+    "clean": "rimraf apps/*/dist apps/*/release packages/*/dist packages/shared/dist apps/renderer/*/dist",
+    "backend:dev": "npm run dev -w @arcgx/backend",
+    "backend:deploy": "npm run deploy -w @arcgx/backend",
+    "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-native.ps1 -All",
+    "capture:test": "node tools/capture-smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.2",
+    "electron": "^42.11.4",
+    "electron-builder": "^25.1.8",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

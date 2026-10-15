@@ -1,0 +1,116 @@
+/*
+ * Arc GX — componentes base.
+ * Cada bloco só usa tokens; nada de valores hard-coded de cor.
+ */
+
+.gx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gx-space-2);
+  padding: var(--gx-space-2) var(--gx-space-4);
+  border: 1px solid var(--gx-border-strong);
+  border-radius: var(--gx-radius-1);
+  background: var(--gx-surface-2);
+  color: var(--gx-text-1);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--gx-dur-fast) var(--gx-ease),
+    border-color var(--gx-dur-fast) var(--gx-ease);
+}
+
+.gx-btn:hover:not(:disabled) {
+  background: var(--gx-surface-3);
+  border-color: var(--gx-accent);
+}
+
+.gx-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gx-btn--primary {
+  background: var(--gx-accent);
+  border-color: var(--gx-accent);
+  color: var(--gx-accent-text);
+  font-weight: 600;
+}
+
+.gx-btn--primary:hover:not(:disabled) {
+  background: var(--gx-text-1);
+  border-color: var(--gx-text-1);
+}
+
+.gx-input {
+  padding: var(--gx-space-2) var(--gx-space-3);
+  border: 1px solid var(--gx-border);
+  border-radius: var(--gx-radius-1);
+  background: var(--gx-surface-1);
+  color: var(--gx-text-1);
+  font: inherit;
+}
+
+.gx-input:focus-visible {
+  outline: 2px solid var(--gx-accent);
+  outline-offset: 1px;
+}
+
+.gx-card {
+  background: var(--gx-surface-1);
+  border: 1px solid var(--gx-border);
+  border-radius: var(--gx-radius-2);
+  padding: var(--gx-space-4);
+  box-shadow: var(--gx-shadow-1);
+}
+
+.gx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gx-space-1);
+  padding: 2px var(--gx-space-2);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--gx-surface-3);
+  color: var(--gx-text-2);
+}
+
+.gx-chip--common { color: var(--gx-tier-common); }
+.gx-chip--uncommon { color: var(--gx-tier-uncommon); }
+.gx-chip--rare { color: var(--gx-tier-rare); }
+.gx-chip--epic { color: var(--gx-tier-epic); }
+.gx-chip--legendary { color: var(--gx-tier-legendary); }
+.gx-chip--mythic { color: var(--gx-tier-mythic); }
+
+/* Tooltip de item do overlay */
+.gx-item-card {
+  min-width: 220px;
+  padding: var(--gx-space-3);
+  border: 1px solid var(--gx-border-strong);
+  border-radius: var(--gx-radius-2);
+  background: color-mix(in srgb, var(--gx-surface-1) 92%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--gx-shadow-3);
+}
+
+.gx-item-card__name {
+  font-weight: 600;
+  color: var(--gx-text-1);
+}
+
+.gx-item-card__meta {
+  display: flex;
+  gap: var(--gx-space-2);
+  align-items: center;
+  margin-top: var(--gx-space-1);
+  font-size: 12px;
+  color: var(--gx-text-3);
+}
+
+.gx-item-card__value {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--gx-accent);
+}

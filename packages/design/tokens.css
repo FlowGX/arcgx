@@ -1,0 +1,70 @@
+/*
+ * Arc GX — design tokens.
+ *
+ * Apenas custom properties: importar este arquivo não muda nada até algum
+ * elemento ler uma variável --gx-*.
+ *
+ * Superfícies quase pretas quentes, texto creme, accent dourado no espírito do
+ * jogo, e as cores de raridade como escala semântica.
+ * Tema escuro apenas — o produto não tem modo claro.
+ */
+
+:root {
+  /* superfícies */
+  --gx-surface-0: #0d0b09;
+  --gx-surface-1: #15120f;
+  --gx-surface-2: #1e1a16;
+  --gx-surface-3: #272219;
+
+  /* texto (contraste AA sobre as superfícies acima) */
+  --gx-text-1: #f2ece1;
+  --gx-text-2: #c3bba9;
+  --gx-text-3: #9a9282;
+
+  /* accent */
+  --gx-accent: #e5b64a;
+  --gx-accent-soft: #3a2f14;
+  --gx-accent-text: #1a1408;
+
+  /* bordas */
+  --gx-border: #2c261e;
+  --gx-border-strong: #3d352a;
+
+  /* estado */
+  --gx-ok: #6fbf73;
+  --gx-warn: #e0a33c;
+  --gx-bad: #e67565;
+  --gx-info: #6aa9e0;
+
+  /* raridade / tier */
+  --gx-tier-common: #9a9282;
+  --gx-tier-uncommon: #6fbf73;
+  --gx-tier-rare: #6aa9e0;
+  --gx-tier-epic: #b07ce0;
+  --gx-tier-legendary: #e5b64a;
+  --gx-tier-mythic: #e67565;
+
+  /* tipografia */
+  --gx-font: 'Barlow', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --gx-font-mono: 'JetBrains Mono', 'Cascadia Mono', ui-monospace, monospace;
+
+  /* espaço e raio */
+  --gx-space-1: 4px;
+  --gx-space-2: 8px;
+  --gx-space-3: 12px;
+  --gx-space-4: 16px;
+  --gx-space-5: 24px;
+  --gx-radius-1: 4px;
+  --gx-radius-2: 8px;
+  --gx-radius-3: 12px;
+
+  /* movimento */
+  --gx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --gx-dur-fast: 90ms;
+  --gx-dur-base: 160ms;
+
+  /* elevação */
+  --gx-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --gx-shadow-2: 0 4px 16px rgb(0 0 0 / 0.5);
+  --gx-shadow-3: 0 12px 40px rgb(0 0 0 / 0.6);
+}

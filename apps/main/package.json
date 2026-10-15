@@ -1,0 +1,14 @@
+{
+  "name": "@arcgx/main",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "@arcgx/shared": "*"
+  }
+}

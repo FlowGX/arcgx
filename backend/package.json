@@ -1,0 +1,19 @@
+{
+  "name": "@arcgx/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute arcgx --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute arcgx --local --file=./schema.sql",
+    "tail": "wrangler tail",
+    "codes": "wrangler d1 execute arcgx --local --command \"SELECT code, uses, max_uses, note FROM entitlement\""
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.99.0"
+  }
+}

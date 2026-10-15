@@ -1,0 +1,23 @@
+[package]
+name = "arcgx-cell-vision"
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+description = "Deteccao de celulas de inventario em Rust puro (N-API), sem OpenCV"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3", default-features = false, features = ["napi8"] }
+napi-derive = { version = "3", default-features = false, features = ["type-def"] }
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+strip = "symbols"

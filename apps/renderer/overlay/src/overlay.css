@@ -1,0 +1,244 @@
+/* HUD: a janela inteira é transparente e click-through.
+   Só os elementos com `pointer-events: auto` recebem o mouse. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--gx-font);
+  user-select: none;
+  cursor: default;
+}
+
+.gx-overlay {
+  position: relative;
+  height: 100%;
+}
+
+/*
+ * Badge **dentro** da celula, sem caixa.
+ *
+ * ## ## ## Por que dentro
+ *
+ * Com `translateY(-100%)` a badge flutuava acima do card, e no ARCK isso
+ * cobre o card de cima da grade — em uma mochila com 5 linhas a ultima badge
+ * tapava o item da linha anterior. Dentro, ela ocupa a faixa da barra, que ja
+ * e area morta do card: o item continua visivel e o numero nao.
+ *
+ * ## ## ## Por que sem fundo
+ *
+ * A caixa escura de 78% de opacidade sobre um card que ja e escuro some a
+ * arte do item. O chip de tier precisa de contraste, e por isso mantem o
+ * proprio fundo; o valor e o nome sao texto puro com sombra.
+ */
+.gx-badge {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px;
+  height: 100%;
+  padding: 0 4px 3px;
+  border-radius: var(--gx-radius-1);
+  overflow: hidden;
+  pointer-events: none;
+  animation: gx-fade var(--gx-dur-base) var(--gx-ease);
+}
+
+.gx-badge__value {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gx-text-1);
+  /*
+   * Sombra em vez de caixa: o texto precisa de contraste sobre a arte, e uma
+   * sombra nao some a arte como um fundo de 78% de opacidade.
+   */
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.95),
+    0 0 3px rgb(0 0 0 / 0.8);
+}
+
+/**
+ * Marcador de "o item é este, o nível é desconhecido".
+ *
+ * Aparece no lugar do preço quando o embedding casou a família mas não o
+ * nível — `torrente-iv` contra `torrente-iii`, mesma arte, numeral mascarado.
+ * A interrogação é deliberada: é mais honesto que exibir o valor do nível que
+ * o encoder supôs, e some sozinha quando o leitor de numeral entrar.
+ */
+.gx-badge__level {
+  font-size: 10px;
+  color: var(--gx-text-2);
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.95),
+    0 0 3px rgb(0 0 0 / 0.8);
+}
+
+/* --------------------------------------------------- contadores e total */
+
+.gx-hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gx-surface-0) 82%, transparent);
+  border: 1px solid var(--gx-border);
+  pointer-events: none;
+  font-size: 12px;
+  color: var(--gx-text-2);
+  animation: gx-fade var(--gx-dur-base) var(--gx-ease);
+}
+
+.gx-hud--vazio {
+  color: var(--gx-text-3);
+  font-style: italic;
+}
+
+.gx-hud__linha {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.gx-hud__nome {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.gx-hud__num {
+  font-variant-numeric: tabular-nums;
+  color: var(--gx-text-1);
+}
+
+/*
+ * O total do jogo e o numero que o jogador confia, entao fica separado e com
+ * destaque. O `title` avisa que ele inclui acessorios — o catalogo da base
+ * nunca vai bater, e a diferenca nao e erro.
+ */
+.gx-hud__total {
+  padding-left: 14px;
+  border-left: 1px solid var(--gx-border);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--gx-accent);
+}
+
+.gx-overlay__notice,
+.gx-overlay__hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gx-surface-0) 82%, transparent);
+  border: 1px solid var(--gx-border);
+  color: var(--gx-text-2);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.gx-overlay__notice {
+  top: 24px;
+}
+
+.gx-overlay__hint {
+  bottom: 24px;
+  opacity: 0.6;
+}
+
+.gx-overlay__reset {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--gx-border);
+  background: color-mix(in srgb, var(--gx-surface-0) 70%, transparent);
+  color: var(--gx-text-3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--gx-dur-base) var(--gx-ease);
+  pointer-events: auto;
+}
+
+.gx-overlay:hover .gx-overlay__reset {
+  opacity: 1;
+}
+
+/* --------------------------------------------------- item não reconhecido */
+
+.gx-unknown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  background: rgb(0 0 0 / 0.35);
+  animation: gx-fade-in var(--gx-dur-base) var(--gx-ease);
+}
+
+.gx-unknown__box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gx-space-2);
+  width: 280px;
+  padding: var(--gx-space-4);
+  border: 1px solid var(--gx-border-strong);
+  border-radius: var(--gx-radius-2);
+  background: var(--gx-surface-1);
+  box-shadow: var(--gx-shadow-3);
+}
+
+.gx-unknown__badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gx-warn);
+}
+
+.gx-unknown__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--gx-space-2);
+}
+
+.gx-unknown__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--gx-text-3);
+  text-align: center;
+}
+
+@keyframes gx-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gx-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-100%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-100%);
+  }
+}

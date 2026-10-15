@@ -1,0 +1,26 @@
+{
+  "name": "@arcgx/wgc-capture",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows Graphics Capture (N-API): captura a janela do jogo e entrega frames BGRA ao JS",
+  "license": "UNLICENSED",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "wgc-capture",
+    "targets": ["x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc"]
+  },
+  "files": ["index.js", "index.d.ts", "*.node"],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "artifacts": "napi artifacts",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.7.4"
+  }
+}

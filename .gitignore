@@ -1,0 +1,62 @@
+# Dependencias
+node_modules/
+.venv-treino/
+venv/
+__pycache__/
+*.pyc
+
+# Builds
+dist/
+release/
+out/
+build/
+packages/native/*/target/
+packages/native/*/npm/
+
+# Runtime
+data-release/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
+
+# ## ## ## Dados
+#
+# `dados/` tem 2,5 GB de capturas de tela usadas para treinar o encoder.
+# Isso nao vai para o git: sao recortes da tela do jogo, ocupam 2,5 GB e
+# nao constribuem para compilar nada.
+#
+# Mas `dados/game/` **e** fonte do app: mapas, eventos, itens e marcadores que
+# o painel consome. A regra antiga era `dados/` inteiro, o que apagava do
+# repositorio justamente o arquivo que acabamos de traduzir para 182
+# subcategorias. Por isso o negacao explicita abaixo.
+dados/*
+!dados/game/
+!dados/apelidos.json
+
+# Saida de treino: `ml/modelo/` e recriado por `ml/treinar.py`.
+# O que o app carrega porem e versionado, em `apps/main/resources/_galeria/`.
+ml/modelo/
+
+# ## ## ## Recurso copiado de dependencia
+#
+# `eng.traineddata.gz` vem de `@tesseract.js-data/eng` e e copiado por
+# `npm run preparar-recursos` (roda no prebuild). Versionar um binario de
+# terceiro aqui só faria o repo crescer e poderia dessincronizar do pacote.
+apps/main/resources/ocr/
+
+# Creditos gerados pela ingestao (contem URLs de terceiros)
+ATTRIBUTION.json
+
+# wrangler
+.wrangler/
+backend/_dev.*.out
+backend/_dev.*.err
+
+# Lixo de execucao
+tmp*.txt
+=

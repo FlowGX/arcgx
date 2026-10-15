@@ -1,0 +1,49 @@
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe version of Wrangler you are using is now out-of-date.[0m
+
+  Please update to the latest version to prevent critical errors.
+  Run `npm install --save-dev wrangler@4` to update to the latest version.
+  After installation, run Wrangler with `npx wrangler`.
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mUnrecognized target environment "ES2023"[0m [tsconfig.json]
+
+    ../tsconfig.base.json:3:14:
+[37m      3 │     "target": [32m"ES2023"[37m,
+        ╵               [32m~~~~~~~~[0m
+
+

@@ -1,0 +1,28 @@
+name = "arcgx-data"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# conta escolhida: subdominio arcgx.workers.dev, plano gratuito
+# https://arcgx-data.arcgx.workers.dev
+account_id = "e204aced651cbb88b94e58db7f108ea5"
+
+# D1 -> 5M leituras/dia e 100k escritas/dia no plano gratuito.
+[[d1_databases]]
+binding = "DB"
+database_name = "arcgx"
+database_id = "1070fb98-336c-4f05-a152-e3c36b00b6ca"
+migrations_dir = "migrations"
+
+[vars]
+# O cliente e Electron, nao um navegador: o Origin chega vazio ou como
+# file://. bloqueio de origem nao protege nada aqui — o que protege e o rate
+# limit por instalacao e o ADMIN_TOKEN no painel. Manter "*" para nao
+# derrubar o app por causa de um header que ele nem envia de verdade.
+ALLOWED_ORIGIN = "*"
+
+# ADMIN_TOKEN e segredo: nao va no git.
+# Defina com:  wrangler secret put ADMIN_TOKEN
+# type "ADMIN_TOKEN" ao rodar "npm run dev"
+
+[observability]
+enabled = true
