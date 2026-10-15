@@ -32,7 +32,8 @@
     "dev:renderer": "concurrently -n desktop,overlay -c cyan,magenta \"npm run dev -w @arcgx/renderer-desktop\" \"npm run dev -w @arcgx/renderer-overlay\"",
     "dev": "npm run build:shared && npm run dev:renderer && electron apps/main/dist/index.js",
     "start": "npm run build && electron apps/main/dist/index.js",
-    "dist": "npm run build && electron-builder --win nsis --publish never",
+    "dist": "npm run build && electron-builder --win nsis --publish never && npm run verificar:pacote",
+    "verificar:pacote": "node tools/verificar-pacote.mjs",
     "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit && tsc -p apps/main/tsconfig.json --noEmit && tsc -p apps/workers/tsconfig.json --noEmit && tsc -p apps/renderer/desktop/tsconfig.json && tsc -p apps/renderer/overlay/tsconfig.json",
     "data:ingest": "node tools/data-ingest/ingest.mjs",
     "data:publish": "node tools/data-publisher/publish.mjs",
@@ -53,6 +54,11 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9"
+    "@arcgx/cell-vision": "*",
+    "@arcgx/shared": "*",
+    "@arcgx/wgc-capture": "*",
+    "electron-updater": "^6.8.9",
+    "onnxruntime-node": "1.30.0",
+    "tesseract.js": "^7.0.0"
   }
 }

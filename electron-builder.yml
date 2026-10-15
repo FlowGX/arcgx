@@ -13,6 +13,26 @@ files:
   - packages/shared/dist/**/*
   - packages/design/*.css
   - package.json
+  # ## ## ## Por que o `target/` do Rust precisa sair
+  #
+  # O `asarUnpack` comeca em `**/node_modules/@arcgx/*/**`, que copia o pacote
+  # inteiro — e o pacote Rust tem `target/release/` com o build
+  # intermediario: DLL de cada crate transitivo, incremental, lixo de compilacao.
+  # Sao 330 MB numa instalador que sem isso daria menos de 100 MB.
+  #
+  # O `.node` ja e coberto por `**/*.node`; `**/*.node` e `**/*.wasm` mais
+  # abaixo sao o que realmente precisa estar fora do asar.
+  - "!**/target/**"
+  - "!**/Cargo.*"
+  # ## ## ## onnxruntime-node embarca binario de todas as plataformas
+  #
+  # `bin/napi-v6/` tem linux (68 MB), darwin (85 MB), win32/arm64 (69 MB) e
+  # win32/x64 (64 MB). O Arc GX e Windows x64 e nada mais: os outros 222 MB
+  # iam parar no instalador sem nunca serem abertos.
+  - "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**"
+  - "!node_modules/onnxruntime-node/bin/napi-v6/linux/**"
+  - "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**"
+  - "!node_modules/onnxruntime-node/bin/napi-v6/win32/ia32/**"
   - "!**/*.map"
   - "!**/{.eslintrc.cjs,.editorconfig,.prettierrc}"
   - "!**/{tsconfig.json,tsconfig.*.json}"

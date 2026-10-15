@@ -197,6 +197,20 @@ descobre que existe versao nova.
 "@
 }
 
+# ## ## ## O pacote e verificado antes de subir
+#
+# Sem esta checagem, um `latest.yml` correto anunciava um instalador que abria
+# com `ERR_MODULE_NOT_FOUND` — happenedo na 0.1.0: build verde, typecheck
+# verde, 108 MB de instalador, e nenhuma dependencia de runtime dentro do asar.
+#
+# O feed e publico e permanente. Publicar um pacote quebrado e pior que nao
+# publicar: o usuario recebe o erro antes de qualquer chance de update.
+Write-Host "`nVerificando o pacote..." -ForegroundColor Cyan
+& node (Join-Path $raiz 'tools\verificar-pacote.mjs')
+if ($LASTEXITCODE -ne 0) {
+  throw 'O pacote esta incompleto. Nao publicado — conserte e rode de novo.'
+}
+
 if ($DryRun) {
   Write-Host "`nDryRun: build ok, nada foi publicado." -ForegroundColor Yellow
   Write-Host "Para publicar, abra um terminal novo e rode:"
