@@ -210,6 +210,15 @@ if ($DryRun) {
 $token = $env:GITHUB_TOKEN
 if (-not $token) { throw 'Defina GITHUB_TOKEN com um PAT de escopo `contents: write`.' }
 
+# ## ## ## TLS 1.2 na mao
+#
+# O PowerShell 5.1 no Windows 10 antigo continua com TLS 1.0 como default, e o
+# GitHub so aceita 1.2+. Sem esta linha a falha aparece como
+# "The request was aborted: Could not create SSL/TLS secure channel", que nao
+# menciona GitHub nem token — e leva a conclusão errada de que o PAT é inválido.
+[Net.ServicePointManager]::SecurityProtocol = `
+  [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
 $headers = @{
   Authorization = "Bearer $token"
   Accept        = 'application/vnd.github+json'
@@ -228,6 +237,28 @@ try {
   Write-Host "Release ja existe (id $($release.id))." -ForegroundColor Yellow
 }
 catch {
+  # ## ## ## 404 aqui e o caminho normal
+  #
+  # `Invoke-RestMethod` lanca uma excecao generica, e a de "nao achou" e
+  # esperada na primeira vez. Tratar so 401/403 como erro de token evita
+  # mascarar um PAT sem escopo como "release nao encontrada".
+  $status = 0
+  try { $status = [int]$_.Exception.Response.StatusCode } catch { $status = 0 }
+
+  if ($status -eq 401 -or $status -eq 403) {
+    throw @"
+Token recusado pelo GitHub (HTTP $status).
+
+Verifique:
+  - o PAT nao expirou
+  - Repository permissions > Contents = Read and write
+  - Repository access inclui o repositorio $Repo
+
+Um PAT sem escopo aparece aqui como 404 no `git push` e 403 na API, nunca
+como mensagem de permissao clara.
+"@
+  }
+
   Write-Host "Criando release..." -ForegroundColor Cyan
   $body = @{
     tag_name     = $tag
@@ -249,13 +280,23 @@ foreach ($arquivo in @(
     Get-ChildItem -Path (Join-Path $saida '*.blockmap') -ErrorAction SilentlyContinue
     Get-ChildItem -Path (Join-Path $saida "*-$Version-setup.exe") -ErrorAction SilentlyContinue
   )) {
+  if (-not $arquivo) { continue }
   $destino = $upload -f [uri]::EscapeDataString($arquivo.Name)
   $bytes = [System.IO.File]::ReadAllBytes($arquivo.FullName)
 
   $tam = if ($arquivo.Length -lt 1MB) { '{0:N0} KB' -f ($arquivo.Length / 1KB) } else { '{0:N1} MB' -f ($arquivo.Length / 1MB) }
-  Write-Host "  $($arquivo.Name)  $tam"
+
+  # `Invoke-RestMethod` nao mostra progresso, e 108 MB sem nenhuma saida
+  # parece travado. `-Debug` no 5.1 imprime bytes enviados, mas polui demais,
+  # entao mostramos o que importa: que comecou e que terminou.
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  Write-Host "  subindo $($arquivo.Name) ($tam)..."
+
   Invoke-RestMethod -Uri $destino -Headers $headers -Method Post `
     -ContentType 'application/octet-stream' -Body $bytes | Out-Null
+
+  $sw.Stop()
+  Write-Host "    ok em $([math]::Round($sw.Elapsed.TotalSeconds,1))s" -ForegroundColor Green
 }
 
 Write-Host "`nPublicado: https://github.com/$Repo/releases/tag/$tag" -ForegroundColor Green
