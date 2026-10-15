@@ -20,8 +20,9 @@
  * negociação.
  */
 
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 
 const require_ = createRequire(import.meta.url);
@@ -82,6 +83,44 @@ const tem = (p) => {
 
 const problemas = [];
 
+/**
+ * ## ## ## Varredura de imports — a parte que evita a proxima ocorrencia
+ *
+ * A lista `ESPERADOS` acima foi escrita a mao e ja errou duas vezes: primeiro
+ * faltou `@arcgx/shared`, depois `onnxruntime-worker`. Um arquivo que depends de
+ * outro e uma fonte de erro **infinita**, porque cada `import` novo e uma chance
+ * nova de o empacotador nao enxergar.
+ *
+ * A varredura abaixo nao confia na lista: ela le cada `.js` de dentro do proprio
+ * asar, extrai os especificadores e confere um por um contra o que esta
+ * empacotado. Se alguem importar `{ Pool } from '@arcgx/pool'`, o verificador
+ * reclama sozinho.
+ */
+const BUILTINS = new Set([
+  'assert', 'async_hooks', 'buffer', 'child_process', 'cluster', 'console',
+  'constants', 'crypto', 'dgram', 'diagnostics_channel', 'dns', 'domain',
+  'electron', 'events', 'fs', 'http', 'http2', 'https', 'inspector', 'module',
+  'net', 'os', 'path', 'perf_hooks', 'process', 'punycode', 'querystring',
+  'readline', 'repl', 'stream', 'string_decoder', 'timers', 'tls', 'trace_events',
+  'tty', 'url', 'util', 'v8', 'vm', 'worker_threads', 'zlib',
+]);
+
+/** Importa algo que nao vem de node_modules (renderer empacotado pelo Vite). */
+const IGNORAR = /^(react|preact|leaflet|\.)/;
+
+function especificadoresDe(codigo) {
+  const achados = new Set();
+  const padroes = [
+    /\bfrom\s*['"]([^'"]+)['"]/g,
+    /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+    /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+  ];
+  for (const re of padroes) {
+    for (const m of codigo.matchAll(re)) achados.add(m[1]);
+  }
+  return achados;
+}
+
 console.log(`[pacote] ${entradas.length} entradas em ${relative(raiz, asarPath)}\n`);
 
 console.log('modulos de runtime:');
@@ -96,6 +135,74 @@ for (const { caminho, porQue } of ARQUIVOS) {
   const ok = tem(caminho);
   console.log(`  ${ok ? 'ok  ' : 'FALTA'} ${caminho}`);
   if (!ok) problemas.push(`recurso ausente: ${caminho} — ${porQue}`);
+}
+
+// ---------------------------------------------------------------- imports
+console.log('\nimports declarados dentro do pacote:');
+const faltandoImport = new Map();
+
+// `extractAll` exige um diretorio de destino. Extrair e preciso porque o
+// cabecalho do asar guarda offset e tamanho, mas nao o conteudo compilado —
+// e o que queremos ler e o codigo depois do preprocess, nao o indice.
+const tmp = mkdtempSync(join(tmpdir(), 'arcgx-pacote-'));
+let codigos = {};
+try {
+  asar.extractAll(asarPath, tmp);
+  const anda = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) anda(p);
+      else if (e.name.endsWith('.js') || e.name.endsWith('.cjs')) {
+        codigos[relative(tmp, p).split(sep).join('/')] = readFileSync(p, 'utf8');
+      }
+    }
+  };
+  anda(tmp);
+} finally {
+  rmSync(tmp, { recursive: true, force: true });
+}
+
+for (const [caminho, fonte] of Object.entries(codigos)) {
+  // ## ## ## So o codigo do projeto
+  //
+  // Varrer `node_modules` produz dozens de falsos positivos: bundle minificado
+  // do Tesseract tem `...from'Zlib.Gzip'` no meio de nomes simbolicos, e
+  // parece um especificador. O bug que queremos pegar nasce no **nosso** codigo
+  // — `apps/` e `packages/` importando pacote que o empacotador nao levou.
+  //
+  // Dependencia faltando la dentro ja quebra o `npm install`, entao nao ha o
+  // que procurar.
+  if (!/^(apps|packages)\//.test(caminho)) continue;
+
+  // Vite ja renomeia os imports do renderer para dentro do bundle; so o que
+  // sobrou de especificador externo e relevante.
+  for (const spec of especificadoresDe(fonte)) {
+    if (spec.startsWith('node:') || BUILTINS.has(spec)) continue;
+    if (IGNORAR.test(spec)) continue;
+
+    const nome = spec.startsWith('@')
+      ? spec.split('/').slice(0, 2).join('/')
+      : spec.split('/')[0];
+    const base = `node_modules/${nome}`;
+    if (!tem(base)) {
+      if (!faltandoImport.has(nome)) faltandoImport.set(nome, new Set());
+      faltandoImport.get(nome).add(`${spec}  (em ${caminho})`);
+    }
+  }
+}
+
+if (faltandoImport.size === 0) {
+  console.log(`  ok   todo especificador externo do codigo do projeto resolve`);
+} else {
+  console.log(`  ${faltandoImport.size} especificador(es) sem pacote:`);
+  for (const [nome, usos] of faltandoImport) {
+    console.log(`  FALTA ${nome}`);
+    for (const u of usos) console.log(`          ${u}`);
+    problemas.push(
+      `import sem pacote: ${nome} — declare em "dependencies" do package.json raiz. ` +
+      `O electron-builder so embute node_modules a partir dali.`,
+    );
+  }
 }
 
 // O `.node` e o `.wasm` precisam estar **fora** do asar: sao abertos por
